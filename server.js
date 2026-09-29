@@ -1,6 +1,7 @@
 // server.js
 const express = require('express');
 const cors = require('cors');
+const { body, validationResult } = require('express-validator');
 require('dotenv').config();
 
 const db = require('./db');
@@ -16,9 +17,24 @@ app.use(express.json());
  * 1. CREATE - POST /api/inscricoes
  * Criar uma nova inscrição
  */
-app.post('/api/inscricoes', async (req, res) => {
+app.post('/api/inscricoes', 
+    body('nome').notEmpty(),
+    body('cpf').notEmpty().isLength({ min: 11, max: 11 }),
+    body('email').isEmail(),
+    body('curso').notEmpty(),
+    body('data_nascimento').optional(),
+     async (req, res) => {
 
         const { nome, cpf, email, curso, data_nascimento } = req.body;
+
+        const results = validationResult(req);
+        if (!results.isEmpty()) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'Dados inválidos para a inscrição.',
+                erros: results.array()
+            });
+        }
 
         const query = `
             INSERT INTO inscricoes (nome, cpf, email, curso, data_nascimento)
